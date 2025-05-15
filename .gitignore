@@ -165,3 +165,6 @@ dmypy.json
 cython_debug/
 
 .vscode
+
+pytest.ini
+tests/
