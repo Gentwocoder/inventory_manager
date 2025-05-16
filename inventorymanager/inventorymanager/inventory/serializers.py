@@ -4,34 +4,41 @@ from .models import Brand, Category, Product, Stock, Supplier, IncomingOrder, Ou
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ['id', 'name']
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = '__all__'
+        fields = ['id', 'name']
 
 class ProductSerializer(serializers.ModelSerializer):
+    brand = BrandSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['id', 'name', 'category', 'brand', 'price', 'description', 'image', 'created_at', 'updated_at']
 
 class StockSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
     class Meta:
         model = Stock
-        fields = '__all__'
+        fields = ['id', 'product', 'quantity', 'productPrice', 'totalPrice', 'created_at', 'updated_at']
 
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
-        fields = '__all__'
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'address', 'created_at']
 
 class IncomingOrderSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    status = serializers.ChoiceField(choices=IncomingOrder.STATUS_CHOICES)
     class Meta:
         model = IncomingOrder
-        fields = '__all__'
+        fields = ['id', 'status', 'supplierId', 'product', 'quantity', 'price', 'created_at']
 
 class OutgoingOrderSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    status = serializers.ChoiceField(choices=OutgoingOrder.STATUS_CHOICES)
     class Meta:
         model = OutgoingOrder
-        fields = '__all__'
+        fields = ['id', 'status', 'product', 'quantity', 'price', 'created_at']
