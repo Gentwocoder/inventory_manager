@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Internal apps
     'core',
+    'inventorymanager.inventory',
     # External apps
     'rest_framework',
 ]
