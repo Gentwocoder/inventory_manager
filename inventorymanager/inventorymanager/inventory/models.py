@@ -1,12 +1,17 @@
 from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
+from django.utils.text import slugify
 
 # Create your models here.
 class Category(MPTTModel):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=70)
     parent = TreeForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='children')
-    slug = models.SlugField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super(Category, self).save(*args, **kwargs)
 
     class MPTTMeta:
         order_insertion_by = ['name']
@@ -24,7 +29,7 @@ class Brand(models.Model):
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    brandId = models.ForeignKey(Category, on_delete=models.CASCADE)
+    brandId = models.ForeignKey(Brand, on_delete=models.CASCADE)
     CategoryId = TreeForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name='products')
     price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField()
