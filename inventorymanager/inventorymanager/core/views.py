@@ -1,10 +1,14 @@
 from django.shortcuts import render
+from django.contrib.auth import authenticate
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import CustomTokenSerializer, UserSerializer, RegisterSerializer, ProfileSerializer
+from rest_framework.throttling import UserRateThrottle
+from .serializers import CustomTokenSerializer, UserSerializer, RegisterSerializer, ProfileSerializer, LoginSerializer
 from .models import CustomUser
 
 # Create your views here.
@@ -43,6 +47,41 @@ class ProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+    
+
+class LoginView(TokenObtainPairView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = TokenObtainPairSerializer
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+        user = authenticate(request, email=email, password=password)
+        if not user:
+            return Response({"message": "Invalid credentials", "status": "failed"}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_email_verified:
+            return Response({"message": "Email is not verified", "status": "failed"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_active:
+            return Response({"message": "Account is not active, contact the admin", "status": "failed"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        tokens = super().post(request)
+
+        return Response({"message": "Logged in successfully", "tokens": tokens.data,
+                         "data": {"email": user.email}, "status": "success"},
+                        status=status.HTTP_200_OK)
+    
+
+class VerifyEmailView(APIView):
+    def get(self, request, token):
+        user = get_object_or_404(CustomUser, email_verification_token=token)
+        user.is_email_verified = True
+        user.email_verification_token = None
+        user.save()
+        return Response({"message": "Email verified successfully"}, status=status.HTTP_200_OK)
     
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from inventorymanager.inventory import views
-from inventorymanager.core.views import RegisterView, CustomTokenView, ProfileView, LogoutView
+from inventorymanager.core.views import RegisterView, CustomTokenView, ProfileView, LogoutView, LoginView, VerifyEmailView
 
 router = DefaultRouter()
 router.register(r"category", views.CategoryView, basename="category")
@@ -34,5 +34,7 @@ urlpatterns = [
     path("api/token/", CustomTokenView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/profile/", ProfileView.as_view(), name="profile"),
+    path("api/login/", LoginView.as_view(), name="login"),
+    path("api/verify-email/<uuid:token>/", VerifyEmailView.as_view(), name="verify-email"),
     path("api/logout/", LogoutView.as_view(), name="logout"),
 ]

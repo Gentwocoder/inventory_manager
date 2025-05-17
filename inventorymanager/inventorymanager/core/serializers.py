@@ -2,7 +2,11 @@ from rest_framework import serializers
 from .models import CustomUser, Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth import authenticate
+from django.core.validators import validate_email
+from django.core.mail import send_mail
+from django.urls import reverse
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -19,11 +23,33 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'phone_number', 'password']
 
         def create(self, validated_data):
-            user = CustomUser.objects.create(
-                email=validated_data['email'],
-                phone_number=validated_data['phone_number'],
+            user = CustomUser.objects.create_user(**validated_data)
+            verification_url = f"http://127.0.0.1/api/verify-email/{user.email_verification_token}"
+            send_mail(
+                subject="Email Verification",
+                message=f"Please click the link to verify your email: {verification_url}",
+                from_email="adetoyese0511@gmail.com",
+                recipient_list=[user.email],
             )
+            user.set_password(validated_data['password'])
+            user.save()
+            
             return user
+        
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=150, min_length=6, write_only=True)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise serializers.ValidationError({"message": "Invalid email format", "status": "failed"})
+
+        return attrs
+
         
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
